@@ -5,7 +5,7 @@ defmodule InventoryManager do
     json_version
   end
 
-  defp to_inv(products) do
+  defp to_file(products) do
     File.write("Inventory.json", products)
   end
 
@@ -15,51 +15,63 @@ defmodule InventoryManager do
     |> Jason.decode!()
   end
 
-  def add_product(name, price, stock)do
-    inventory = to_list()
-    new_product = %Product{name: name , price: price, stock: stock, id: (length(inventory) + 1)}
-    [new_product|inventory]
-    |> to_json()
-    |> to_inv()
+  defp to_cart(buy) do
+    File.write("cart.json", buy)
   end
 
-  def list_product() do
+  defp to_listCart() do
+    File.stream!("cart.json")
+    |> Enum.random()
+    |> Jason.decode!()
+  end
+
+  @spec add_product(String.t(), Float, Integer) :: :ok | {:error, atom()}
+  def add_product(name, price, stock)do
+    inventory = to_list()
+    new_product = %{id: length(inventory) + 1, name: name , price: price, stock: stock}
+    [new_product|inventory]
+    |> to_json()
+    |> to_file()
+  end
+
+  def list_products() do
     inventory = to_list()
     inventory
   end
 
-  def sell_product(id, quantity) do
-    cart = []
+  def increase_stock(id, new_stock) do
     inventory = to_list()
-    updated_inventory = Enum.map(inventory, fn product ->
-      if product["id"] == id do
-        new_stock = product.stock - quantity
-        if new_stock >= 0 do
-          [{product["id"],quantity}|cart]
-        else
-          "Insufficient stock"
-        end
-      end
-    end)
-    Enum.reject(inventory, updated_inventory)
-    to_json(updated_inventory)
-    |> to_inv()
+    product = Enum.find(inventory, fn product -> product["id"] == id end)
+    |>Map.put("stock",new_stock)
+    inventory = Enum.reject(inventory, fn product -> product["id"] == id end)
+    [product|inventory]
+    |>to_json()
+    |> to_file()
   end
 
-  def update_stock(id, new_stock) do
+  def sell_product(id, quantity) do
+    cart = to_listCart()
     inventory = to_list()
-    updated_inventory = Enum.map(inventory, fn product -> product.id == id end)
-    if updated_inventory do
-      Enum.map(inventory, fn product ->
-        if product.id == id do
-          %Product{product | stock: new_stock}
-        else
-          product
-        end
-      end)
+    product = Enum.find(inventory, fn product -> product["id"] == id end)
+    new_stock = product["stock"] - quantity
+    case new_stock >= 0 do
+      :true ->
+        product = Map.put(product, "stock" , new_stock)
+        tuple = %{id: product["id"], quantity: quantity}
+        [tuple|cart]
+        |>to_json()
+        |>to_cart()
+        inventory = Enum.reject(inventory, fn product -> product["id"] == id end)
+        [product|inventory]
+        |> to_json()
+        |> to_file()
+      _ ->
+        IO.inspect("Insufficient stock")
     end
-    to_json(updated_inventory)
-    |> to_inv()
   end
+
+  def view_cart(), do: to_listCart()
+
+  def checkout(), do: to_cart(to_json([]))
 
 end
