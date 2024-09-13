@@ -19,7 +19,7 @@ defmodule InventoryManager do
     File.write("cart.json", buy)
   end
 
-  defp to_listCart() do
+  def to_listCart() do
     File.stream!("cart.json")
     |> Enum.random()
     |> Jason.decode!()
@@ -70,7 +70,25 @@ defmodule InventoryManager do
     end
   end
 
-  def view_cart(), do: to_listCart()
+  def view_cart(cart) do
+    IO.puts("Cart:")
+    IO.puts("--------------------")
+    IO.puts("ID | Quantity | Price | Total")
+    IO.puts("--------------------")
+    IO.puts("")
+    if length(cart) > 0 do
+      total = 0
+      Enum.each(cart, fn product ->
+        id = product["id"]
+        price = Enum.find(to_list(), fn product -> product["id"] == id end)["price"]
+        IO.puts("#{id}, #{product["quantity"]}, #{price}, #{price * product["quantity"]}")
+      end)
+      IO.puts("--------------------")
+      IO.puts("Total: #{total}")
+    else
+      IO.inspect("Cart is empty")
+    end
+  end
 
   def checkout(), do: to_cart(to_json([]))
 
