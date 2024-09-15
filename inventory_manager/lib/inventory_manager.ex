@@ -5,86 +5,84 @@ defmodule InventoryManager do
     json_version
   end
 
-  defp to_file(products) do
+  defp to_inventory(products) do
     File.write("Inventory.json", products)
-  end
-
-  defp to_list() do
-    File.stream!("Inventory.json")
-    |> Enum.random()
-    |> Jason.decode!()
   end
 
   defp to_cart(buy) do
     File.write("cart.json", buy)
   end
 
-  def to_listCart() do
+  defp to_listCart() do
     File.stream!("cart.json")
     |> Enum.random()
     |> Jason.decode!()
   end
 
-  @spec add_product(String.t(), Float, Integer) :: :ok | {:error, atom()}
+  def list_products() do
+    File.stream!("Inventory.json")
+    |> Enum.random()
+    |> Jason.decode!()
+  end
+
   def add_product(name, price, stock)do
-    inventory = to_list()
+    inventory = list_products()
     new_product = %{id: length(inventory) + 1, name: name , price: price, stock: stock}
     [new_product|inventory]
     |> to_json()
-    |> to_file()
-  end
-
-  def list_products() do
-    inventory = to_list()
-    inventory
+    |> to_inventory()
   end
 
   def increase_stock(id, new_stock) do
-    inventory = to_list()
-    product = Enum.find(inventory, fn product -> product["id"] == id end)
-    |>Map.put("stock",new_stock)
-    inventory = Enum.reject(inventory, fn product -> product["id"] == id end)
-    [product|inventory]
-    |>to_json()
-    |> to_file()
+    inventory = list_products()
+    if product = Enum.find(inventory, fn product -> product["id"] == id end) do
+      IO.inspect(product)
+      product = Map.put(product,"stock",new_stock + product["stock"])
+      inventory = Enum.reject(inventory, fn product -> product["id"] == id end)
+      [product|inventory]
+      |>to_json()
+      |> to_inventory()
+    else
+      IO.inspect("Product not found")
+    end
   end
 
   def sell_product(id, quantity) do
     cart = to_listCart()
-    inventory = to_list()
+    inventory = list_products()
     product = Enum.find(inventory, fn product -> product["id"] == id end)
-    new_stock = product["stock"] - quantity
-    case new_stock >= 0 do
-      :true ->
-        product = Map.put(product, "stock" , new_stock)
-        tuple = %{id: product["id"], quantity: quantity}
-        [tuple|cart]
-        |>to_json()
-        |>to_cart()
-        inventory = Enum.reject(inventory, fn product -> product["id"] == id end)
-        [product|inventory]
-        |> to_json()
-        |> to_file()
-      _ ->
-        IO.inspect("Insufficient stock")
+    if product != nil do
+      new_stock = product["stock"] - quantity
+      case new_stock >= 0 do
+        :true ->
+          product = Map.put(product, "stock" , new_stock)
+          tuple = %{id: product["id"], quantity: quantity}
+          [tuple|cart]
+          |>to_json()
+          |>to_cart()
+          inventory = Enum.reject(inventory, fn product -> product["id"] == id end)
+          [product|inventory]
+          |> to_json()
+          |> to_inventory()
+        _ ->
+          IO.inspect("Insufficient stock")
+      end
+    else
+      IO.inspect("The product not exiting")
     end
   end
 
-  def view_cart(cart) do
-    IO.puts("Cart:")
-    IO.puts("--------------------")
-    IO.puts("ID | Quantity | Price | Total")
-    IO.puts("--------------------")
-    IO.puts("")
+  def view_cart() do
+    cart = to_listCart()
+    IO.puts("Cart:\n------------------------------------------\nItems     | ID | Quantity | Price | Total\n------------------------------------------")
     if length(cart) > 0 do
-      total = 0
-      Enum.each(cart, fn product ->
+      total = Enum.reduce(cart,0, fn product, total ->
         id = product["id"]
-        price = Enum.find(to_list(), fn product -> product["id"] == id end)["price"]
-        IO.puts("#{id}, #{product["quantity"]}, #{price}, #{price * product["quantity"]}")
+        product1 = Enum.find(list_products(), fn product -> product["id"] == id end)
+        IO.puts("#{product1["name"]}  | #{id}      #{product["quantity"]}       #{product1["price"]}   #{product1["price"] * product["quantity"]}")
+        total + product["quantity"] * product1["price"]
       end)
-      IO.puts("--------------------")
-      IO.puts("Total: #{total}")
+      IO.puts("------------------------------------------\nTotal: $#{total}")
     else
       IO.inspect("Cart is empty")
     end
