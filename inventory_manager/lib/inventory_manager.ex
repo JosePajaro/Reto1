@@ -19,13 +19,13 @@ defmodule InventoryManager do
     |> Jason.decode!()
   end
 
-  def list_products() do
+  defp list_products() do
     File.stream!("Inventory.json")
     |> Enum.random()
     |> Jason.decode!()
   end
 
-  def add_product(name, price, stock)do
+  defp add_product(name, price, stock)do
     inventory = list_products()
     new_product = %{id: length(inventory) + 1, name: name , price: price, stock: stock}
     [new_product|inventory]
@@ -33,7 +33,7 @@ defmodule InventoryManager do
     |> to_inventory()
   end
 
-  def increase_stock(id, new_stock) do
+  defp increase_stock(id, new_stock) do
     inventory = list_products()
     if product = Enum.find(inventory, fn product -> product["id"] == id end) do
       IO.inspect(product)
@@ -47,7 +47,7 @@ defmodule InventoryManager do
     end
   end
 
-  def sell_product(id, quantity) do
+  defp sell_product(id, quantity) do
     cart = to_listCart()
     inventory = list_products()
     product = Enum.find(inventory, fn product -> product["id"] == id end)
@@ -72,7 +72,7 @@ defmodule InventoryManager do
     end
   end
 
-  def view_cart() do
+  defp view_cart() do
     cart = to_listCart()
     IO.puts("Cart:\n------------------------------------------\nItems     | ID | Quantity | Price | Total\n------------------------------------------")
     if length(cart) > 0 do
@@ -88,6 +88,50 @@ defmodule InventoryManager do
     end
   end
 
-  def checkout(), do: to_cart(to_json([]))
+  defp checkout(), do: to_cart(to_json([]))
 
+  def run() do
+    IO.puts("------------------------------------------\nWelcome to the Inventory Manager!\n1. Add a product\n2. View inventory\n3. Increase stock\n4. Sell a product\n5. View cart\n6. Checkout\n7. Exit\n------------------------------------------")
+    {n,_} = IO.gets("Insert the options: ")
+    |>Integer.parse()
+    case n do
+      1 ->
+        name = IO.gets("Enter the product name: ")
+        {price,_} = Float.parse(IO.gets("Enter the product price: "))
+        {stock,_} = Integer.parse(IO.gets("Enter the product stock: "))
+        add_product(name, price, stock)
+        IO.puts("Product added successfully")
+        run()
+      2->
+        IO.puts("Inventory...")
+        IO.inspect(list_products())
+        run()
+      3 ->
+        {id,_} = Integer.parse(IO.getn("Enter the product ID: "))
+        {new_stock,_} = Integer.parse(IO.getn("Enter the new stock: "))
+        increase_stock(id, new_stock)
+        IO.puts("Increase stock sucefully")
+        run()
+      4 ->
+        {id,_} = Integer.parse(IO.getn("Enter the product ID: "))
+        {quantity,_} = Integer.parse(IO.getn("Enter the quantity to sell: "))
+        sell_product(id, quantity)
+        IO.puts("The product add to cart was successfully")
+        run()
+      5 ->
+        IO.puts("Your Cart")
+        view_cart()
+        run()
+      6 ->
+        IO.puts("Checkout sucessfully")
+        checkout()
+        run()
+      7 ->
+        IO.puts("Bye!")
+        :ok
+      _ ->
+        IO.puts("Invalid option, please try again.")
+        run()
+      end
+  end
 end
