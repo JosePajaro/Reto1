@@ -36,7 +36,6 @@ defmodule InventoryManager do
   defp increase_stock(id, new_stock) do
     inventory = list_products()
     if product = Enum.find(inventory, fn product -> product["id"] == id end) do
-      IO.inspect(product)
       product = Map.put(product,"stock",new_stock + product["stock"])
       inventory = Enum.reject(inventory, fn product -> product["id"] == id end)
       [product|inventory]
@@ -64,6 +63,8 @@ defmodule InventoryManager do
           [product|inventory]
           |> to_json()
           |> to_inventory()
+          IO.puts("The product add to cart was successfully")
+          :ok
         _ ->
           IO.inspect("Insufficient stock")
       end
@@ -107,16 +108,15 @@ defmodule InventoryManager do
         IO.inspect(list_products())
         run()
       3 ->
-        {id,_} = Integer.parse(IO.getn("Enter the product ID: "))
-        {new_stock,_} = Integer.parse(IO.getn("Enter the new stock: "))
+        {id,_} = Integer.parse(IO.gets("Enter the product ID: "))
+        {new_stock,_} = Integer.parse(IO.gets("Enter the new stock: "))
         increase_stock(id, new_stock)
         IO.puts("Increase stock sucefully")
         run()
       4 ->
-        {id,_} = Integer.parse(IO.getn("Enter the product ID: "))
-        {quantity,_} = Integer.parse(IO.getn("Enter the quantity to sell: "))
+        {id,_} = Integer.parse(IO.gets("Enter the product ID: "))
+        {quantity,_} = Integer.parse(IO.gets("Enter the quantity to sell: "))
         sell_product(id, quantity)
-        IO.puts("The product add to cart was successfully")
         run()
       5 ->
         IO.puts("Your Cart")
