@@ -19,13 +19,13 @@ defmodule InventoryManager do
     |> Jason.decode!()
   end
 
-  defp list_products() do
+  def list_products() do
     File.stream!("Inventory.json")
     |> Enum.random()
     |> Jason.decode!()
   end
 
-  defp add_product(name, price, stock)do
+  def add_product(name, price, stock)do
     inventory = list_products()
     new_product = %{id: length(inventory) + 1, name: name , price: price, stock: stock}
     [new_product|inventory]
@@ -33,7 +33,7 @@ defmodule InventoryManager do
     |> to_inventory()
   end
 
-  defp increase_stock(id, new_stock) do
+  def increase_stock(id, new_stock) do
     inventory = list_products()
     if product = Enum.find(inventory, fn product -> product["id"] == id end) do
       product = Map.put(product,"stock",new_stock + product["stock"])
@@ -46,7 +46,7 @@ defmodule InventoryManager do
     end
   end
 
-  defp sell_product(id, quantity) do
+  def sell_product(id, quantity) do
     cart = to_listCart()
     inventory = list_products()
     product = Enum.find(inventory, fn product -> product["id"] == id end)
@@ -64,7 +64,6 @@ defmodule InventoryManager do
           |> to_json()
           |> to_inventory()
           IO.puts("The product add to cart was successfully")
-          :ok
         _ ->
           IO.inspect("Insufficient stock")
       end
@@ -73,7 +72,7 @@ defmodule InventoryManager do
     end
   end
 
-  defp view_cart() do
+  def view_cart() do
     cart = to_listCart()
     IO.puts("Cart:\n------------------------------------------\nItems     | ID | Quantity | Price | Total\n------------------------------------------")
     if length(cart) > 0 do
@@ -89,7 +88,7 @@ defmodule InventoryManager do
     end
   end
 
-  defp checkout(), do: to_cart(to_json([]))
+  def checkout(), do: to_cart(to_json([]))
 
   def run() do
     IO.puts("------------------------------------------\nWelcome to the Inventory Manager!\n1. Add a product\n2. View inventory\n3. Increase stock\n4. Sell a product\n5. View cart\n6. Checkout\n7. Exit\n------------------------------------------")

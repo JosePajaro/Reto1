@@ -9,13 +9,13 @@ defmodule TasksManager do
     File.write("Tasks.json", strn)
   end
 
-  defp list_tasks() do
+  def list_tasks() do
     File.stream!("Tasks.json")
     |> Enum.random()
     |> Jason.decode!()
   end
 
-  defp add_task(description) do
+  def add_task(description) do
     tasks = list_tasks()
     new_task = %{id: length(tasks) + 1, description: description, completed: false}
     [new_task|tasks]
@@ -23,14 +23,25 @@ defmodule TasksManager do
     |>to_file
   end
 
-  defp completed_task(id) do
+  def completed_task(id) do
     tasks = list_tasks()
-    updated_task = Enum.find(tasks, fn x -> x["id"] == id end)
-    |>Map.put("completed", true)
-    tasks = Enum.reject(tasks, fn x -> x["id"] == id end)
-    [updated_task|tasks]
-    |>to_json
-    |>to_file
+    if tasks != nil do
+      updated_task = Enum.find(tasks, fn x -> x["id"] == id end)
+      if updated_task != nil do
+        updated_task
+        |>Map.put("completed", true)
+        tasks = Enum.reject(tasks, fn x -> x["id"] == id end)
+        [updated_task|tasks]
+        |>to_json
+        |>to_file
+      else
+        IO.puts("Task not found")
+        :ok
+      end
+    else
+      IO.puts("List_task is empty")
+      :ok
+    end
   end
 
   def run() do
