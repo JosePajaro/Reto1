@@ -11,7 +11,7 @@ defmodule InventoryManager do
   def add_product(inventory, name, price, stock)do
     new_product = %{"id"=> :ets.info(inventory, :size) + 1, "name"=> name , "price"=> price, "stock"=> stock}
     :ets.insert_new(inventory, {new_product["id"],new_product})
-    IO.puts ("Su producto fue creado con el id: #{new_product["id"]}!")
+    IO.puts ("Product created with id: #{new_product["id"]}!")
   end
 
   def list_products(inventory) do
@@ -48,7 +48,7 @@ defmodule InventoryManager do
           :true ->
             product = Map.put(product, "stock" , new_stock)
             :ets.insert(inventory, {id, product})
-            IO.puts("The stock of the product with the #{id} was decreased!")
+            IO.puts("The stock of the product with the id #{id} was decreased!")
             :ets.insert_new(:cart,{sizeC+1,{id, quantity}})
             IO.puts("The product add to cart was successfully")
           _ ->
@@ -63,11 +63,11 @@ defmodule InventoryManager do
   def view_cart(cart) do
     list_Cart = :ets.tab2list(cart)
     list_Inventory = :ets.tab2list(:inventory)
-    IO.puts("Cart:\n------------------------------------------\nItems     | ID | Quantity | Price | Total\n------------------------------------------")
+    IO.puts("Cart:\n------------------------------------------\nItems| ID | Quantity | Price | Total\n------------------------------------------")
     if :ets.info(cart, :size) > 0 do
-      total = Enum.reduce(list_Cart,0, fn {_,{id,quantity}}, total ->
+      total = Enum.reduce(list_Cart,0, fn {item,{id,quantity}}, total ->
         {_,product} = Enum.find(list_Inventory, fn {_,product} -> product["id"] == id end)
-        IO.puts("#{product["name"]}  | #{id}      #{quantity}       #{product["price"]}   #{product["price"] * quantity}")
+        IO.puts("#{item}    | #{id}       #{quantity}     #{product["price"]}   #{product["price"] * quantity}")
         total + quantity * product["price"]
       end)
       IO.puts("------------------------------------------\nTotal: $#{total}")
@@ -76,7 +76,15 @@ defmodule InventoryManager do
     end
   end
 
-  def checkout(cart) do
+  def checkout(inventory, cart) do
+    list_Cart = :ets.tab2list(cart)
+    list_Inventory = :ets.tab2list(inventory)
+    total = Enum.reduce(list_Cart,0, fn {_,{id,quantity}}, total ->
+      {_,product} = Enum.find(list_Inventory, fn {_,product} -> product["id"] == id end)
+      total + quantity * product["price"]
+    end)
+    IO.puts("------------------------------------------\nTotal: $#{total}\n------------------------------------------")
+    IO.puts("Thank you for your purchase!")
     :ets.delete(cart)
     cart()
   end
@@ -112,7 +120,7 @@ defmodule InventoryManager do
         run()
       6 ->
         IO.puts("Checkout sucessfully")
-        checkout(:cart)
+        checkout(:inventory, :cart)
         run()
       7 ->
         IO.puts("Bye!")
